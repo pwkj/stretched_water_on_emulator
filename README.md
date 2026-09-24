@@ -1,1 +1,1 @@
-# stretched_water_on_simulator
+# Simulation of stretched water on quantum emulator 
