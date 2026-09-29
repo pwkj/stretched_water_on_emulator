@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import pickle
 
 import pyscf
 from pyscf import scf, mcscf
@@ -38,15 +37,14 @@ def stretch_water(delta_r):
 	return H1_new, H2_new
 
 
-vals = np.arange(-0.1,0.1,0.01)
+data_points = np.arange(-0.1,0.1,0.01)
 n_layers = 1
 random_runs = 1
 shots = 1000
-#active_space = (8, 6) #(num_elec, num_orbs)
 active_space = (4, 4) #(num_elec, num_orbs)
 
 obj_list = []
-for delta_r in vals:
+for delta_r in data_points:
 	H1_new, H2_new = stretch_water(delta_r)
 
 	mol = pyscf.gto.M()
@@ -60,19 +58,20 @@ for delta_r in vals:
 	mol.unit="angstrom"
 	mol.build()
 
-	#### Ideal ####
-	# ideal_simulator = simulator.ideal_simulator(mol, wf = "fuccd", active_space = active_space, n_layers = n_layers, random_runs = random_runs)
+	# #### Ideal ####
+	# ideal_simulator = simulator.ideal_simulator(mol, wf = "tUPS", active_space = active_space, n_layers = n_layers, random_runs = random_runs)
 	# print(ideal_simulator)
 
-	# with open('H2O_8_6_aug-cc-pvdz_fuccd_L=1_ideal_BFGS_r5_.txt', 'a') as f:
+	# with open('H2O_4_4_aug-cc-pvdz_tUPS_L=2_ideal_5runs.txt', 'a') as f:
 	# 	f.write(str(delta_r)+' '+ str(ideal_simulator[0])+ '\n')
 
-	### Shotnoise ####
-	dic = simulator.shot_noise(mol, active_space = active_space, 
+	## Shotnoise ####
+	shot_simulator = simulator.shot_noise(mol, active_space = active_space, 
 	shots = shots, n_layers = n_layers, random_runs=random_runs, wf = "tUPS")
-	obj_list.append(dic)
-	with open('H2O_4_4_tUPS.obj', 'wb') as file:
-		pickle.dump(obj_list, file)
-	file.close()
+
+	with open('H2O_4_4_aug-cc-pvdz_tUPS_L=1_1000shots_correct_one.txt', 'a') as f:
+		f.write(str(delta_r)+' '+ str(shot_simulator)+ '\n')
+	
+
 
 

@@ -38,7 +38,6 @@ def ideal_simulator(mol, wf, active_space, n_layers, random_runs):
     print("4 threads")
     nb.set_num_threads(4)
 
-    #fucc: 10.1021/acs.jctc.8b01004 (k-UpCCGSD)
 
     # PySCF 
     rhf = pyscf.scf.RHF(mol).run()
@@ -51,18 +50,6 @@ def ideal_simulator(mol, wf, active_space, n_layers, random_runs):
     if wf == "tUPS":
         ansatz_options={"n_layers": n_layers, "skip_last_singles": True} # Options
     
-    if wf == "fuccd":
-        ansatz_options={"n_layers": n_layers, "D": True}
-        wf = "fucc"
-    
-    if wf == "fuccpD":
-        ansatz_options={"n_layers": n_layers, "pD": True}
-        wf = "fucc"
-    
-    if wf == "fuccGpD":
-        ansatz_options={"n_layers": n_layers, "GpD": True}
-        wf = "fucc"
-
     WF_tUPS_wo_oo = WaveFunctionUPS(
     active_space, # active space (num_elec, num_orbs)
     mo_coeff,
@@ -127,15 +114,6 @@ def shot_noise(mol, active_space, shots, n_layers, random_runs, wf):
     if wf == "tUPS":
         ansatz_options={"n_layers": n_layers, "skip_last_singles": True} # Options
     
-    if wf == "fUCCD":
-        ansatz_options={"n_layers": n_layers, "D": True}
-        wf = "fUCC"
-    
-    if wf == "fUCCGpD":
-        ansatz_options={"n_layers": n_layers, "GpD": True}
-        wf = "fUCC"
-
-    
     QI = QuantumInterface(
     sampler, # pass sampler
     wf, # Ansatz
@@ -163,7 +141,7 @@ def shot_noise(mol, active_space, shots, n_layers, random_runs, wf):
         if i == 0:
             qWF = WaveFunctionCircuit(
             active_space,
-            mo_coeff,  # MO coefficients from previous ideal simulator run
+            mo_coeff, 
             integral_generator,
             QI,  # pass QuantumInterface
             include_active_kappa = True  
@@ -184,7 +162,7 @@ def shot_noise(mol, active_space, shots, n_layers, random_runs, wf):
             #plt.savefig('non_transpiled_circuit.png')
 
             # We have adjusted the tolerance and maxiter to looser values because it will be hard to converge shot noise
-            qWF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 1)
+            qWF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 100)
             #qWF.run_wf_optimization_2step("BFGS", orbital_optimization = True, tol = 1e-3, maxiter = 500)
         
             opt_angles_tmp.append(qWF.thetas)
@@ -205,7 +183,7 @@ def shot_noise(mol, active_space, shots, n_layers, random_runs, wf):
 
         qWF = WaveFunctionCircuit(
         active_space,
-        mo_coeff,  # MO coefficients from previous ideal simulator run
+        mo_coeff,  
         integral_generator,
         QI,  # pass QuantumInterface
         include_active_kappa = True  
@@ -231,6 +209,8 @@ def shot_noise(mol, active_space, shots, n_layers, random_runs, wf):
 
     print("#### QI.get_info ####")
     QI.get_info()
+
+    return best_energy
 
 
 
