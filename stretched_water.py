@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 import pyscf
 from pyscf import scf, mcscf
@@ -37,14 +38,14 @@ def stretch_water(delta_r):
 	return H1_new, H2_new
 
 
-data_points = np.arange(-0.1,0.1,0.01)
+#PES_datapoints = np.arange(-0.1,0.1,0.01)
+PES_datapoints = [-0.1]
 n_layers = 1
-random_runs = 1
-shots = 1000
+runs = 1
+shots = 50000
 active_space = (4, 4) #(num_elec, num_orbs)
 
-obj_list = []
-for delta_r in data_points:
+for delta_r in PES_datapoints:
 	H1_new, H2_new = stretch_water(delta_r)
 
 	mol = pyscf.gto.M()
@@ -66,12 +67,16 @@ for delta_r in data_points:
 	# 	f.write(str(delta_r)+' '+ str(ideal_simulator[0])+ '\n')
 
 	## Shotnoise ####
-	shot_simulator = simulator.shot_noise(mol, active_space = active_space, 
-	shots = shots, n_layers = n_layers, random_runs=random_runs, wf = "tUPS")
+	shot_noise = simulator.shot_noise_simulator(mol,  wf = "tUPS", n_layers = n_layers,
+	active_space = active_space, shots = shots, runs=runs)
 
-	with open('H2O_4_4_aug-cc-pvdz_tUPS_L=1_1000shots_correct_one.txt', 'a') as f:
-		f.write(str(delta_r)+' '+ str(shot_simulator)+ '\n')
-	
+	results = {
+    "energies": shot_noise[0],
+    "total_shots_used": shot_noise[1],
+    "total_paulis_evaluated": shot_noise[2]}
+
+	with open("H2O_4_4_aug-cc-pvdz_tUPS_L=1_50000shots_tol_1e-5_maxiter_200.json", "w") as f:
+		json.dump(results, f)
 
 
 

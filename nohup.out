@@ -1,0 +1,7 @@
+converged SCF energy = -76.0195508699847
+/Users/pwkj/repositories/SlowQuant/slowquant/unitary_coupled_cluster/optimizers.py:96: OptimizeWarning: Unknown solver options: disp
+  res = scipy.optimize.minimize(
+/Users/pwkj/repositories/SlowQuant/slowquant/unitary_coupled_cluster/optimizers.py:96: OptimizeWarning: Unknown solver options: disp
+  res = scipy.optimize.minimize(
+/Users/pwkj/repositories/SlowQuant/slowquant/unitary_coupled_cluster/optimizers.py:96: OptimizeWarning: Unknown solver options: disp
+  res = scipy.optimize.minimize(
