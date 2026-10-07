@@ -60,23 +60,27 @@ for delta_r in PES_datapoints:
 	mol.build()
 
 	# #### Ideal ####
-	# ideal_simulator = simulator.ideal_simulator(mol, wf = "tUPS", active_space = active_space, n_layers = n_layers, random_runs = random_runs)
-	# print(ideal_simulator)
+	ideal_simulator = simulator.ideal_simulator(mol, wf = "tUPS", active_space = active_space, n_layers = n_layers, runs = runs)
+	results = {"energies": ideal_simulator}
+
+	with open("H2O_4_4_aug-cc-pvdz_tUPS_L=1_ideal_tol_1e-3_maxiter_200.json", "w") as f:
+		json.dump(results, f)
+
 
 	# with open('H2O_4_4_aug-cc-pvdz_tUPS_L=2_ideal_5runs.txt', 'a') as f:
 	# 	f.write(str(delta_r)+' '+ str(ideal_simulator[0])+ '\n')
 
 	## Shotnoise ####
-	shot_noise = simulator.shot_noise_simulator(mol,  wf = "tUPS", n_layers = n_layers,
-	active_space = active_space, shots = shots, runs=runs)
+	# shot_noise = simulator.shot_noise_simulator(mol,  wf = "tUPS", n_layers = n_layers,
+	# active_space = active_space, shots = shots, runs=runs)
 
-	results = {
-    "energies": shot_noise[0],
-    "total_shots_used": shot_noise[1],
-    "total_paulis_evaluated": shot_noise[2]}
+	# results = {
+    # "energies": shot_noise[0],
+    # "total_shots_used": shot_noise[1],
+    # "total_paulis_evaluated": shot_noise[2]}
 
-	with open("H2O_4_4_aug-cc-pvdz_tUPS_L=1_50000shots_tol_1e-5_maxiter_200.json", "w") as f:
-		json.dump(results, f)
+	# with open("H2O_4_4_aug-cc-pvdz_tUPS_L=1_50000shots_tol_1e-5_maxiter_200.json", "w") as f:
+	# 	json.dump(results, f)
 
 
 

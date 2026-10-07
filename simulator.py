@@ -33,7 +33,7 @@ def count_qubit_gates(circuit):
     return one_qubit_gate_count, two_qubit_gate_count
 
 
-def ideal_simulator(mol, wf, active_space, n_layers, random_runs):
+def ideal_simulator(mol, wf, active_space, n_layers, runs):
 
     print("4 threads")
     nb.set_num_threads(4)
@@ -42,57 +42,60 @@ def ideal_simulator(mol, wf, active_space, n_layers, random_runs):
     rhf = pyscf.scf.RHF(mol).run()
     mo_coeff = rhf.mo_coeff
     integral_generator = mol   
+
+    print("### Number of orbitals ###", len(mo_coeff))
+
     energies = []
-
-    print("Number of orbitals = ", len(mo_coeff))
-
-    ansatz_options={"n_layers": n_layers, "skip_last_singles": True} # Options
     
-    WF_tUPS_wo_oo = WaveFunctionUPS(
+    WF_wo_oo = WaveFunctionUPS(
     active_space, # active space (num_elec, num_orbs)
     mo_coeff,
     integral_generator,
     wf, # Ansatz
-    ansatz_options=ansatz_options, 
-    include_active_kappa=True,
+    ansatz_options={"n_layers": n_layers, "skip_last_singles": True}, # NO skip_last_singles option as we do not use oo
+    include_active_kappa=False, # No oo. Default is false, so can also be removed
     )
 
-    WF_tUPS_wo_oo.run_wf_optimization_1step("BFGS", orbital_optimization = False)
+    #WF_wo_oo.run_wf_optimization_1step("BFGS", orbital_optimization = False)
+    WF_wo_oo.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 200)
+    
 
+    
     WF = WaveFunctionUPS(
     active_space, # active space (num_elec, num_orbs)
     mo_coeff,
     integral_generator,
     wf, # Ansatz
-    ansatz_options=ansatz_options, # Options
+    ansatz_options={"n_layers": n_layers, "skip_last_singles": True}, # Options
     include_active_kappa=True,
     )
-    WF.thetas =  WF_tUPS_wo_oo.thetas
-    WF.run_wf_optimization_1step("BFGS", orbital_optimization = True)
-    #WF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 200)
+    
+    #WF.thetas =  WF_wo_oo.thetas
+    #WF.run_wf_optimization_1step("BFGS", orbital_optimization = True)
+    WF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-8, maxiter = 200)
     energies.append(float(WF.energy_elec + mol.energy_nuc()))
 
-    if random_runs > 0:
+    print("### Energy ###",energies[0])
 
-        for i in range(random_runs):
-
+    if runs > 0:
+        for i in range(runs):
             WF = WaveFunctionUPS(
             active_space, # active space (num_elec, num_orbs)
             mo_coeff,
             integral_generator,
             wf, # Ansatz
-            ansatz_options=ansatz_options, # Options
+            ansatz_options={"n_layers": n_layers, "skip_last_singles": True},
             include_active_kappa=True,
             )
 
             WF.thetas = (np.random.random(len(WF.thetas))*2*np.pi).tolist()
-            WF.run_wf_optimization_1step("BFGS", orbital_optimization = True)
-            #WF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 200)
+            #WF.run_wf_optimization_1step("BFGS", orbital_optimization = True)
+            WF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-8, maxiter = 200)
             energies.append(float(WF.energy_elec + mol.energy_nuc()))
 
-    print("best_energy:", min(energies))
+            print("### Energy ###",energies[i+1]) 
 
-    return min(energies), energies
+    return energies
 
 
 
@@ -164,6 +167,9 @@ def shot_noise_simulator(mol, wf, n_layers, active_space, shots, runs):
     print("### Total Paulis evaluated ###",total_paulis_evaluated[0])
     print("### Energy ###",energies[0])  
 
+    # The QuantumInterface saves the results from the quantum emulation run. In order to run a new quanutm emulation, you have to reset the QI:
+    QI._reset_cliques()
+
     if runs > 0:
         for i in range(runs):
             qWF = WaveFunctionCircuit(
@@ -186,6 +192,9 @@ def shot_noise_simulator(mol, wf, n_layers, active_space, shots, runs):
 
             print("### Total Paulis evaluated ###",qWF.QI.total_paulis_evaluated)
             print("### Energy ###",energies[i+1])  
+
+            # The QuantumInterface saves the results from the quantum emulation run. In order to run a new quanutm emulation, you have to reset the QI:
+            QI._reset_cliques()
 
     return energies, total_shots_used, total_paulis_evaluated
 
