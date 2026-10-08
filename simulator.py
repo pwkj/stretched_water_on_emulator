@@ -45,7 +45,8 @@ def ideal_simulator(mol, wf, active_space, n_layers, runs):
 
     print("### Number of orbitals ###", len(mo_coeff))
 
-    energies = []
+    energies = []   
+    thetas = []
     
     WF_wo_oo = WaveFunctionUPS(
     active_space, # active space (num_elec, num_orbs)
@@ -56,10 +57,9 @@ def ideal_simulator(mol, wf, active_space, n_layers, runs):
     include_active_kappa=False, # No oo. Default is false, so can also be removed
     )
 
-    #WF_wo_oo.run_wf_optimization_1step("BFGS", orbital_optimization = False)
-    WF_wo_oo.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 200)
+    WF_wo_oo.run_wf_optimization_1step("BFGS", orbital_optimization = False)
+    #WF_wo_oo.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 200)
     
-
     
     WF = WaveFunctionUPS(
     active_space, # active space (num_elec, num_orbs)
@@ -71,9 +71,10 @@ def ideal_simulator(mol, wf, active_space, n_layers, runs):
     )
     
     #WF.thetas =  WF_wo_oo.thetas
-    #WF.run_wf_optimization_1step("BFGS", orbital_optimization = True)
-    WF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-8, maxiter = 200)
+    WF.run_wf_optimization_1step("BFGS", orbital_optimization = True, tol = 1e-8, maxiter = 500)
+    #WF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-8, maxiter = 200)
     energies.append(float(WF.energy_elec + mol.energy_nuc()))
+    thetas.append(WF.thetas)
 
     print("### Energy ###",energies[0])
 
@@ -89,13 +90,18 @@ def ideal_simulator(mol, wf, active_space, n_layers, runs):
             )
 
             WF.thetas = (np.random.random(len(WF.thetas))*2*np.pi).tolist()
-            #WF.run_wf_optimization_1step("BFGS", orbital_optimization = True)
-            WF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-8, maxiter = 200)
+            WF.run_wf_optimization_1step("BFGS", orbital_optimization = True)
+            #WF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-8, maxiter = 200)
             energies.append(float(WF.energy_elec + mol.energy_nuc()))
+            thetas.append(WF.thetas)
 
             print("### Energy ###",energies[i+1]) 
 
-    return energies
+    min_idx = np.argmin(energies)
+    min_energy = energies[min_idx]
+    min_thetas = thetas[min_idx]
+
+    return energies, thetas, min_energy, min_thetas
 
 
 
@@ -154,8 +160,8 @@ def shot_noise_simulator(mol, wf, n_layers, active_space, shots, runs):
 
     # Run wave function optimization
     # We have adjusted the tolerance and maxiter to looser values because it will be hard to converge shot noise
-    qWF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 200)
-    #qWF.run_wf_optimization_2step("BFGS", orbital_optimization = True, tol = 1e-3, maxiter = 500)
+    #qWF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 200)
+    qWF.run_wf_optimization_2step("BFGS", orbital_optimization = True, tol = 1e-3, maxiter = 500)
 
     opt_angles.append(qWF.thetas)
     opt_c_mo.append(qWF.c_mo)

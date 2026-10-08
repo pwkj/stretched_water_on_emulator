@@ -39,7 +39,7 @@ def stretch_water(delta_r):
 
 
 #PES_datapoints = np.arange(-0.1,0.1,0.01)
-PES_datapoints = [-0.1]
+PES_datapoints = [-0.1,-0.09]
 n_layers = 1
 runs = 1
 shots = 50000
@@ -60,8 +60,14 @@ for delta_r in PES_datapoints:
 	mol.build()
 
 	# #### Ideal ####
-	ideal_simulator = simulator.ideal_simulator(mol, wf = "tUPS", active_space = active_space, n_layers = n_layers, runs = runs)
-	results = {"energies": ideal_simulator}
+	ideal_simulator = simulator.ideal_simulator(mol, 
+	wf = "tUPS", active_space = active_space, n_layers = n_layers, runs = runs)
+	results = {
+	"distance": delta_r,
+	"energies": ideal_simulator[0],
+	"thetas": ideal_simulator[1],
+	"min_energy": ideal_simulator[2],
+	"min_thetas": ideal_simulator[3]}
 
 	with open("H2O_4_4_aug-cc-pvdz_tUPS_L=1_ideal_tol_1e-3_maxiter_200.json", "w") as f:
 		json.dump(results, f)
