@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import json
+import os
 
 import pyscf
 from pyscf import scf, mcscf
@@ -38,12 +39,27 @@ def stretch_water(delta_r):
 	return H1_new, H2_new
 
 
-#PES_datapoints = np.arange(-0.1,0.1,0.01)
-PES_datapoints = [-0.1,-0.09]
-n_layers = 1
-runs = 1
-shots = 50000
+results = {
+"distance": [],
+"energies": [],
+"thetas": [],
+"min_energy": [],
+"best_thetas": [],
+"total_shots_used": [], 
+"total_paulis_evaluated": []}
+
+filename = "H2O_4_4_aug-cc-pvdz_tUPS_HFstartorbs_L=2_ideal_tol=1e-3_maxiter=100.json"
+
+DO_IDEAL = True
+DO_SHOTNOISE = False
+
+PES_datapoints = np.arange(-0.1,0.1,0.01)
+#PES_datapoints = [-0.1,-0.09]
+n_layers = 2
+runs = 0
+shots = 1000
 active_space = (4, 4) #(num_elec, num_orbs)
+
 
 for delta_r in PES_datapoints:
 	H1_new, H2_new = stretch_water(delta_r)
@@ -59,34 +75,37 @@ for delta_r in PES_datapoints:
 	mol.unit="angstrom"
 	mol.build()
 
-	# #### Ideal ####
-	ideal_simulator = simulator.ideal_simulator(mol, 
-	wf = "tUPS", active_space = active_space, n_layers = n_layers, runs = runs)
-	results = {
-	"distance": delta_r,
-	"energies": ideal_simulator[0],
-	"thetas": ideal_simulator[1],
-	"min_energy": ideal_simulator[2],
-	"min_thetas": ideal_simulator[3]}
+	if DO_IDEAL == True:
+		#### Ideal ####
+		ideal_simulator = simulator.ideal_simulator(mol, 
+		wf = "tUPS", active_space = active_space, n_layers = n_layers, runs = runs)
 
-	with open("H2O_4_4_aug-cc-pvdz_tUPS_L=1_ideal_tol_1e-3_maxiter_200.json", "w") as f:
-		json.dump(results, f)
+		results["distance"].append(delta_r)
+		results["energies"].append(ideal_simulator[0])
+		results["thetas"].append(ideal_simulator[1])
+		results["min_energy"].append(ideal_simulator[2])
+		results["best_thetas"].append(ideal_simulator[3])
+
+		print("#### INFO FOR EACH RUN ####")
+		print("distance", delta_r, "\n")
+		print("min_energy", ideal_simulator[2], "\n")
+
+	if DO_SHOTNOISE == True:	
+		#### Shotnoise ####
+		shot_noise = simulator.shot_noise_simulator(mol,  wf = "tUPS", n_layers = n_layers,
+		active_space = active_space, shots = shots, runs=runs)
+
+		results["distance"].append(delta_r)
+		results["energies"].append(ideal_simulator[0])
+		results["thetas"].append(ideal_simulator[1])
+		results["min_energy"].append(ideal_simulator[2])
+		results["best_thetas"].append(ideal_simulator[3])
+
+		print("#### INFO FOR EACH RUN ####")
+		print("distance", delta_r, "\n")
+		print("min_energy", ideal_simulator[2], "\n")
 
 
-	# with open('H2O_4_4_aug-cc-pvdz_tUPS_L=2_ideal_5runs.txt', 'a') as f:
-	# 	f.write(str(delta_r)+' '+ str(ideal_simulator[0])+ '\n')
 
-	## Shotnoise ####
-	# shot_noise = simulator.shot_noise_simulator(mol,  wf = "tUPS", n_layers = n_layers,
-	# active_space = active_space, shots = shots, runs=runs)
-
-	# results = {
-    # "energies": shot_noise[0],
-    # "total_shots_used": shot_noise[1],
-    # "total_paulis_evaluated": shot_noise[2]}
-
-	# with open("H2O_4_4_aug-cc-pvdz_tUPS_L=1_50000shots_tol_1e-5_maxiter_200.json", "w") as f:
-	# 	json.dump(results, f)
-
-
-
+with open(filename, "w") as f:
+	f.write(json.dumps(results))

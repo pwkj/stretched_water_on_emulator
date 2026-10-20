@@ -57,8 +57,8 @@ def ideal_simulator(mol, wf, active_space, n_layers, runs):
     include_active_kappa=False, # No oo. Default is false, so can also be removed
     )
 
-    WF_wo_oo.run_wf_optimization_1step("BFGS", orbital_optimization = False)
-    #WF_wo_oo.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 200)
+    #WF_wo_oo.run_wf_optimization_1step("BFGS", orbital_optimization = False)
+    WF_wo_oo.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 100)
     
     
     WF = WaveFunctionUPS(
@@ -71,7 +71,7 @@ def ideal_simulator(mol, wf, active_space, n_layers, runs):
     )
     
     #WF.thetas =  WF_wo_oo.thetas
-    WF.run_wf_optimization_1step("BFGS", orbital_optimization = True, tol = 1e-8, maxiter = 500)
+    WF.run_wf_optimization_1step("BFGS", orbital_optimization = True, tol = 1e-3, maxiter = 100)
     #WF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-8, maxiter = 200)
     energies.append(float(WF.energy_elec + mol.energy_nuc()))
     thetas.append(WF.thetas)
@@ -99,10 +99,9 @@ def ideal_simulator(mol, wf, active_space, n_layers, runs):
 
     min_idx = np.argmin(energies)
     min_energy = energies[min_idx]
-    min_thetas = thetas[min_idx]
+    best_thetas = thetas[min_idx]
 
-    return energies, thetas, min_energy, min_thetas
-
+    return energies, thetas, min_energy, best_thetas
 
 
 def shot_noise_simulator(mol, wf, n_layers, active_space, shots, runs):
@@ -136,7 +135,7 @@ def shot_noise_simulator(mol, wf, n_layers, active_space, shots, runs):
     QI.get_info()
 
     energies = []
-    opt_angles = []
+    thetas = []
     opt_c_mo = []
     total_shots_used = []
     total_paulis_evaluated = []
@@ -161,9 +160,9 @@ def shot_noise_simulator(mol, wf, n_layers, active_space, shots, runs):
     # Run wave function optimization
     # We have adjusted the tolerance and maxiter to looser values because it will be hard to converge shot noise
     #qWF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 200)
-    qWF.run_wf_optimization_2step("BFGS", orbital_optimization = True, tol = 1e-3, maxiter = 500)
+    qWF.run_wf_optimization_2step("BFGS", orbital_optimization = True, tol = 1e-3, maxiter = 100)
 
-    opt_angles.append(qWF.thetas)
+    thetas.append(qWF.thetas)
     opt_c_mo.append(qWF.c_mo)
     total_shots_used.append(qWF.QI.total_shots_used)
     total_paulis_evaluated.append(qWF.QI.total_paulis_evaluated)
@@ -186,10 +185,10 @@ def shot_noise_simulator(mol, wf, n_layers, active_space, shots, runs):
             include_active_kappa = True  
             )
             #qWF.thetas = (np.random.random(len(qWF.thetas))*2*np.pi).tolist()
-            qWF.thetas = opt_angles[i] # Pass the theta parameters from ideal simulator to circuit wave function
-            qWF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 200)
+            qWF.thetas = thetas[i] # Pass the theta parameters from ideal simulator to circuit wave function
+            qWF.run_wf_optimization_2step("rotosolve", orbital_optimization = True, tol = 1e-3, maxiter = 100)
 
-            opt_angles.append(qWF.thetas)
+            thetas.append(qWF.thetas)
             opt_c_mo.append(qWF.c_mo)
             total_shots_used.append(qWF.QI.total_shots_used)
             total_paulis_evaluated.append(qWF.QI.total_paulis_evaluated)
@@ -202,7 +201,11 @@ def shot_noise_simulator(mol, wf, n_layers, active_space, shots, runs):
             # The QuantumInterface saves the results from the quantum emulation run. In order to run a new quanutm emulation, you have to reset the QI:
             QI._reset_cliques()
 
-    return energies, total_shots_used, total_paulis_evaluated
+    min_idx = np.argmin(energies)
+    min_energy = energies[min_idx]
+    best_thetas = thetas[min_idx]
+
+    return energies, min_energy, best_thetas, total_shots_used, total_paulis_evaluated
 
 
 
