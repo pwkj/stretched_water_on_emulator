@@ -48,14 +48,15 @@ results = {
 "total_shots_used": [], 
 "total_paulis_evaluated": []}
 
-filename = "H2O_4_4_aug-cc-pvdz_tUPS_HFstartorbs_L=2_ideal_tol=1e-3_maxiter=100.json"
+#filename = "H2O_4_4_aug-cc-pvdz_tUPS_HFstartorbs_L=2_ideal_tol=1e-3_maxiter=100.json"
+filename = "H2O_4_4_aug-cc-pvdz_tUPS_HFstartorbs_L=1_shots1000_tol=1e-3_maxiter=100.json"
 
-DO_IDEAL = True
-DO_SHOTNOISE = False
+DO_IDEAL = False #True
+DO_SHOTNOISE = True #False
 
-PES_datapoints = np.arange(-0.1,0.1,0.01)
+PES_datapoints = np.arange(-0.1,0.1,0.02)
 #PES_datapoints = [-0.1,-0.09]
-n_layers = 2
+n_layers = 1
 runs = 0
 shots = 1000
 active_space = (4, 4) #(num_elec, num_orbs)
@@ -87,7 +88,7 @@ for delta_r in PES_datapoints:
 		results["best_thetas"].append(ideal_simulator[3])
 
 		print("#### INFO FOR EACH RUN ####")
-		print("distance", delta_r, "\n")
+		print("distance", delta_r)
 		print("min_energy", ideal_simulator[2], "\n")
 
 	if DO_SHOTNOISE == True:	
@@ -96,16 +97,16 @@ for delta_r in PES_datapoints:
 		active_space = active_space, shots = shots, runs=runs)
 
 		results["distance"].append(delta_r)
-		results["energies"].append(ideal_simulator[0])
-		results["thetas"].append(ideal_simulator[1])
-		results["min_energy"].append(ideal_simulator[2])
-		results["best_thetas"].append(ideal_simulator[3])
+		results["energies"].append(shot_noise[0])
+		results["thetas"].append(shot_noise[1])
+		results["min_energy"].append(shot_noise[2])
+		results["best_thetas"].append(shot_noise[3])
+		results["total_shots_used"].append(shot_noise[4])
+		results["total_paulis_evaluated"].append(shot_noise[5])
 
 		print("#### INFO FOR EACH RUN ####")
-		print("distance", delta_r, "\n")
-		print("min_energy", ideal_simulator[2], "\n")
-
-
+		print("distance", delta_r)
+		print("min_energy", shot_noise[2], "\n")
 
 with open(filename, "w") as f:
 	f.write(json.dumps(results))

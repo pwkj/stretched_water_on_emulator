@@ -205,7 +205,9 @@ def shot_noise_simulator(mol, wf, n_layers, active_space, shots, runs):
     min_energy = energies[min_idx]
     best_thetas = thetas[min_idx]
 
-    return energies, min_energy, best_thetas, total_shots_used, total_paulis_evaluated
+    return energies, thetas, min_energy, best_thetas, total_shots_used, total_paulis_evaluated
+
+
 
 
 
